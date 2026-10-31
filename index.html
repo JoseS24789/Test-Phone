@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Escáner de Código de Barras Móvil</title>
-    <!-- Importar la librería html5-qrcode optimizada para web móvil -->
+    <!-- Importar la librería html5-qrcode -->
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         body { 
@@ -17,7 +17,6 @@
         }
         h2 { margin-bottom: 15px; color: #2c3e50; }
         
-        /* Contenedor del escáner limpio sin aspecto de reproductor de video */
         #reader { 
             width: 100%; 
             max-width: 400px; 
@@ -47,21 +46,17 @@
 
     <h2>Escáner de Inventario</h2>
     
-    <!-- Contenedor donde se ejecuta la cámara sin controles multimedia -->
     <div id="reader"></div>
 
     <div id="result-box">
         <div class="label-title">Código detectado:</div>
-        <div id="result">Apunta la cámara a un código...</div>
+        <div id="result">Apunta la cámara trasera a un código...</div>
     </div>
 
     <script>
         function onScanSuccess(decodedText, decodedResult) {
-            // Muestra el resultado en pantalla cuando lee un código con éxito
-            const resultElement = document.getElementById('result');
-            resultElement.innerText = decodedText;
+            document.getElementById('result').innerText = decodedText;
             
-            // Opcional: vibración corta en el celular si el dispositivo lo soporta
             if (navigator.vibrate) {
                 navigator.vibrate(100);
             }
@@ -70,22 +65,24 @@
         }
 
         function onScanFailure(error) {
-            // Se ejecuta mientras busca códigos activamente (se puede dejar vacío para evitar ruido en consola)
+            // Ignorar errores de escaneo continuo
         }
 
-        // Inicializar el escáner utilizando la cámara trasera por defecto ('environment')
-        let html5QrcodeScanner = new Html5QrcodeScanner(
-            "reader", 
-            { 
-                fps: 10, 
-                qrbox: { width: 260, height: 140 },
-                aspectRatio: 1.0,
-                rememberLastUsedCamera: true
-            }, 
-            false
-        );
+        // Inicializar el escáner directamente con la cámara trasera
+        const html5QrCode = new Html5Qrcode("reader");
         
-        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+        const config = { fps: 10, qrbox: { width: 260, height: 140 } };
+
+        // Forzar directamente el uso de la cámara trasera ('environment') sin preguntar
+        html5QrCode.start(
+            { facingMode: "environment" }, 
+            config, 
+            onScanSuccess, 
+            onScanFailure
+        ).catch((err) => {
+            console.error("Error al iniciar la cámara trasera: ", err);
+            document.getElementById('result').innerText = "Error: No se pudo acceder a la cámara trasera.";
+        });
     </script>
 
 </body>
