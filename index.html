@@ -23,7 +23,7 @@
         #status-box { 
             margin-top: 25px; padding: 15px 20px; background: #ffffff; 
             border-radius: 10px; display: inline-block; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            max-width: 400px; width: 90%; font-size: 1rem; color: #27ae60; font-weight: bold;
+            max-width: 400px; width: 90%; font-size: 0.95rem; color: #27ae60; font-weight: bold;
         }
     </style>
 </head>
@@ -35,32 +35,30 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
+            const statusBox = document.getElementById('status-box');
+
             function onScanSuccess(decodedText, decodedResult) {
                 if (navigator.vibrate) navigator.vibrate(100);
 
-                const statusBox = document.getElementById('status-box');
-                
-                // Limpiar posibles espacios o ceros extra si es necesario
                 let cleanCode = decodedText.trim();
                 
-                statusBox.innerHTML = `Scanned: ${cleanCode}<br><span style="font-size:0.8rem; color:#555;">Opening Craftex in 2 seconds...</span>`;
+                statusBox.innerHTML = `Scanned: <b>${cleanCode}</b><br><span style="font-size:0.8rem; color:#555;">Searching on Craftex...</span>`;
 
-                console.log(`Código escaneado bruto:`, decodedResult);
-                console.log(`Código limpio enviado:`, cleanCode);
+                console.info("Código escaneado enviado a Craftex:", cleanCode);
 
                 html5QrCode.stop().then(() => {
-                    // Dar 2 segundos para ver en pantalla qué código leyó exactamente antes de abrir la página
                     setTimeout(() => {
-                        const craftexSearchUrl = `https://www.craftex.com/catalogsearch/result/?q=${encodeURIComponent(cleanCode)}`;
+                        // URL corregida con el formato oficial de Craftex
+                        const craftexSearchUrl = `https://www.craftex.com/search?keywords=${encodeURIComponent(cleanCode)}`;
                         window.location.href = craftexSearchUrl;
-                    }, 2000);
+                    }, 1000);
                 }).catch(err => {
                     console.error("Error al detener el escáner:", err);
                 });
             }
 
             function onScanFailure(error) {
-                // Ignorar errores continuos de búsqueda
+                // Continuar escaneando
             }
 
             const html5QrCode = new Html5Qrcode("reader");
@@ -72,8 +70,9 @@
                 onScanSuccess, 
                 onScanFailure
             ).catch((err) => {
-                console.error("Error al iniciar la cámara:", err);
-                document.getElementById('status-box').innerText = "Error: Could not access the rear camera.";
+                console.error("Error de cámara:", err);
+                statusBox.style.color = "#e74c3c";
+                statusBox.innerText = "Error: Could not access camera.";
             });
         });
     </script>
