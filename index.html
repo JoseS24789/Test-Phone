@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Price Checker</title>
-    <!-- Librería html5-qrcode -->
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         body { 
@@ -15,51 +14,68 @@
             padding: 20px; 
             color: #333;
         }
-        
-        .scanner-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 8px;
-        }
-
+        .scanner-title { font-size: 1.1rem; font-weight: 600; color: #2c3e50; margin-bottom: 8px; }
         #reader { 
-            width: 100%; 
-            max-width: 280px; 
-            margin: 0 auto; 
-            background: #fff;
-            border-radius: 12px; 
-            overflow: hidden; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            border: none !important;
+            width: 100%; max-width: 280px; margin: 0 auto; background: #fff;
+            border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            min-height: 200px;
         }
-        
         #status-box { 
-            margin-top: 25px; 
-            padding: 15px 20px; 
-            background: #ffffff; 
-            border-radius: 10px; 
-            display: inline-block; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            max-width: 400px;
-            width: 90%;
-            font-size: 1rem;
-            color: #7f8c8d;
+            margin-top: 25px; padding: 15px 20px; background: #ffffff; 
+            border-radius: 10px; display: inline-block; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            max-width: 400px; width: 90%; font-size: 1rem; color: #27ae60; font-weight: bold;
         }
     </style>
 </head>
 <body>
 
     <div class="scanner-title">Price Checker</div>
-
-    <!-- Contenedor compacto de la cámara -->
     <div id="reader"></div>
+    <div id="status-box">Point the rear camera at a barcode...</div>
 
-    <div id="status-box" id="status-text">
-        Point the rear camera at a barcode...
-    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            function onScanSuccess(decodedText, decodedResult) {
+                if (navigator.vibrate) navigator.vibrate(100);
 
-    <!-- Enlazar el script externo -->
-    <script src="craftex-connector.js"></script>
+                const statusBox = document.getElementById('status-box');
+                
+                // Limpiar posibles espacios o ceros extra si es necesario
+                let cleanCode = decodedText.trim();
+                
+                statusBox.innerHTML = `Scanned: ${cleanCode}<br><span style="font-size:0.8rem; color:#555;">Opening Craftex in 2 seconds...</span>`;
+
+                console.log(`Código escaneado bruto:`, decodedResult);
+                console.log(`Código limpio enviado:`, cleanCode);
+
+                html5QrCode.stop().then(() => {
+                    // Dar 2 segundos para ver en pantalla qué código leyó exactamente antes de abrir la página
+                    setTimeout(() => {
+                        const craftexSearchUrl = `https://www.craftex.com/catalogsearch/result/?q=${encodeURIComponent(cleanCode)}`;
+                        window.location.href = craftexSearchUrl;
+                    }, 2000);
+                }).catch(err => {
+                    console.error("Error al detener el escáner:", err);
+                });
+            }
+
+            function onScanFailure(error) {
+                // Ignorar errores continuos de búsqueda
+            }
+
+            const html5QrCode = new Html5Qrcode("reader");
+            const config = { fps: 10, qrbox: { width: 200, height: 100 } };
+
+            html5QrCode.start(
+                { facingMode: "environment" }, 
+                config, 
+                onScanSuccess, 
+                onScanFailure
+            ).catch((err) => {
+                console.error("Error al iniciar la cámara:", err);
+                document.getElementById('status-box').innerText = "Error: Could not access the rear camera.";
+            });
+        });
+    </script>
 </body>
 </html>
