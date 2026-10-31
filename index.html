@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Escáner de Código de Barras Móvil</title>
+    <!-- Importar la librería html5-qrcode optimizada para web móvil -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            text-align: center; 
+            background: #f4f7f6; 
+            margin: 0; 
+            padding: 20px; 
+            color: #333;
+        }
+        h2 { margin-bottom: 15px; color: #2c3e50; }
+        
+        /* Contenedor del escáner limpio sin aspecto de reproductor de video */
+        #reader { 
+            width: 100%; 
+            max-width: 400px; 
+            margin: 0 auto; 
+            background: #fff;
+            border-radius: 12px; 
+            overflow: hidden; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border: none !important;
+        }
+        
+        #result-box { 
+            margin-top: 25px; 
+            padding: 15px 20px; 
+            background: #ffffff; 
+            border-radius: 10px; 
+            display: inline-block; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            max-width: 400px;
+            width: 90%;
+        }
+        .label-title { font-size: 0.9rem; color: #7f8c8d; margin-bottom: 5px; }
+        #result { font-size: 1.3rem; font-weight: bold; color: #27ae60; word-break: break-all; }
+    </style>
+</head>
+<body>
+
+    <h2>Escáner de Inventario</h2>
+    
+    <!-- Contenedor donde se ejecuta la cámara sin controles multimedia -->
+    <div id="reader"></div>
+
+    <div id="result-box">
+        <div class="label-title">Código detectado:</div>
+        <div id="result">Apunta la cámara a un código...</div>
+    </div>
+
+    <script>
+        function onScanSuccess(decodedText, decodedResult) {
+            // Muestra el resultado en pantalla cuando lee un código con éxito
+            const resultElement = document.getElementById('result');
+            resultElement.innerText = decodedText;
+            
+            // Opcional: vibración corta en el celular si el dispositivo lo soporta
+            if (navigator.vibrate) {
+                navigator.vibrate(100);
+            }
+
+            console.log(`Código escaneado: ${decodedText}`, decodedResult);
+        }
+
+        function onScanFailure(error) {
+            // Se ejecuta mientras busca códigos activamente (se puede dejar vacío para evitar ruido en consola)
+        }
+
+        // Inicializar el escáner utilizando la cámara trasera por defecto ('environment')
+        let html5QrcodeScanner = new Html5QrcodeScanner(
+            "reader", 
+            { 
+                fps: 10, 
+                qrbox: { width: 260, height: 140 },
+                aspectRatio: 1.0,
+                rememberLastUsedCamera: true
+            }, 
+            false
+        );
+        
+        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+    </script>
+
+</body>
+</html>
