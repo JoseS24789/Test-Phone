@@ -16,10 +16,18 @@
             color: #333;
         }
         
+        /* Título pequeño ubicado justo encima de la cámara */
+        .scanner-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
         #reader { 
             width: 100%; 
             max-width: 400px; 
-            margin: 20px auto 0 auto; 
+            margin: 0 auto; 
             background: #fff;
             border-radius: 12px; 
             overflow: hidden; 
@@ -43,11 +51,14 @@
 </head>
 <body>
 
-    <!-- Contenedor donde se ejecuta la cámara (sin título superior) -->
+    <!-- Título pequeño arriba de la cámara -->
+    <div class="scanner-title">Price Checker</div>
+
+    <!-- Contenedor donde se ejecuta la cámara -->
     <div id="reader"></div>
 
     <div id="result-box">
-        <div class="label-title">Price Checker - Detected Code:</div>
+        <div class="label-title">Detected Code:</div>
         <div id="result">Point the rear camera at a barcode...</div>
     </div>
 
