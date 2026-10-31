@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Escáner de Código de Barras Móvil</title>
+    <title>Price Checker</title>
     <!-- Importar la librería html5-qrcode -->
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
@@ -15,12 +15,11 @@
             padding: 20px; 
             color: #333;
         }
-        h2 { margin-bottom: 15px; color: #2c3e50; }
         
         #reader { 
             width: 100%; 
             max-width: 400px; 
-            margin: 0 auto; 
+            margin: 20px auto 0 auto; 
             background: #fff;
             border-radius: 12px; 
             overflow: hidden; 
@@ -44,13 +43,12 @@
 </head>
 <body>
 
-    <h2>Escáner de Inventario</h2>
-    
+    <!-- Contenedor donde se ejecuta la cámara (sin título superior) -->
     <div id="reader"></div>
 
     <div id="result-box">
-        <div class="label-title">Código detectado:</div>
-        <div id="result">Apunta la cámara trasera a un código...</div>
+        <div class="label-title">Price Checker - Detected Code:</div>
+        <div id="result">Point the rear camera at a barcode...</div>
     </div>
 
     <script>
@@ -61,7 +59,7 @@
                 navigator.vibrate(100);
             }
 
-            console.log(`Código escaneado: ${decodedText}`, decodedResult);
+            console.log(`Scanned code: ${decodedText}`, decodedResult);
         }
 
         function onScanFailure(error) {
@@ -80,8 +78,8 @@
             onScanSuccess, 
             onScanFailure
         ).catch((err) => {
-            console.error("Error al iniciar la cámara trasera: ", err);
-            document.getElementById('result').innerText = "Error: No se pudo acceder a la cámara trasera.";
+            console.error("Error starting the rear camera: ", err);
+            document.getElementById('result').innerText = "Error: Could not access the rear camera.";
         });
     </script>
 
