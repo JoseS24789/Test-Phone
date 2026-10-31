@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Price Checker</title>
-    <!-- Importar la librería html5-qrcode -->
+    <!-- Librería html5-qrcode -->
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         body { 
@@ -23,7 +23,6 @@
             margin-bottom: 8px;
         }
 
-        /* Frame de la cámara más pequeño y centrado */
         #reader { 
             width: 100%; 
             max-width: 280px; 
@@ -35,7 +34,7 @@
             border: none !important;
         }
         
-        #result-box { 
+        #status-box { 
             margin-top: 25px; 
             padding: 15px 20px; 
             background: #ffffff; 
@@ -44,53 +43,23 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
             max-width: 400px;
             width: 90%;
+            font-size: 1rem;
+            color: #7f8c8d;
         }
-        .label-title { font-size: 0.9rem; color: #7f8c8d; margin-bottom: 5px; }
-        #result { font-size: 1.3rem; font-weight: bold; color: #27ae60; word-break: break-all; }
     </style>
 </head>
 <body>
 
     <div class="scanner-title">Price Checker</div>
 
-    <!-- Contenedor de la cámara más compacto -->
+    <!-- Contenedor compacto de la cámara -->
     <div id="reader"></div>
 
-    <div id="result-box">
-        <div class="label-title">Detected Code:</div>
-        <div id="result">Point the rear camera at a barcode...</div>
+    <div id="status-box" id="status-text">
+        Point the rear camera at a barcode...
     </div>
 
-    <script>
-        function onScanSuccess(decodedText, decodedResult) {
-            document.getElementById('result').innerText = decodedText;
-            
-            if (navigator.vibrate) {
-                navigator.vibrate(100);
-            }
-
-            console.log(`Scanned code: ${decodedText}`, decodedResult);
-        }
-
-        function onScanFailure(error) {
-            // Ignorar errores de escaneo continuo
-        }
-
-        const html5QrCode = new Html5Qrcode("reader");
-        
-        // Área de escaneo interna adaptada al nuevo tamaño
-        const config = { fps: 10, qrbox: { width: 200, height: 100 } };
-
-        html5QrCode.start(
-            { facingMode: "environment" }, 
-            config, 
-            onScanSuccess, 
-            onScanFailure
-        ).catch((err) => {
-            console.error("Error starting the rear camera: ", err);
-            document.getElementById('result').innerText = "Error: Could not access the rear camera.";
-        });
-    </script>
-
+    <!-- Enlazar el script externo -->
+    <script src="craftex-connector.js"></script>
 </body>
 </html>
