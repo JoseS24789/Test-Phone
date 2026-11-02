@@ -40,20 +40,16 @@
             function onScanSuccess(decodedText, decodedResult) {
                 if (navigator.vibrate) navigator.vibrate(100);
 
-                // Limpiar espacios y opcionalmente quitar ceros a la izquierda si el sitio de Craftex lo requiere
                 let cleanCode = decodedText.trim();
                 
-                // Si notas que Craftex no lo encuentra por los ceros iniciales, puedes descomentar la línea de abajo:
-                // cleanCode = cleanCode.replace(/^0+/, '');
-
                 statusBox.innerHTML = `Scanned: <b>${cleanCode}</b><br><span style="font-size:0.8rem; color:#555;">Searching on Craftex...</span>`;
 
-                console.info("Código limpio enviado a Craftex:", cleanCode);
+                console.info("Código escaneado enviado a Craftex:", cleanCode);
 
                 html5QrCode.stop().then(() => {
                     setTimeout(() => {
-                        // URL oficial de búsqueda de Craftex
-                        const craftexSearchUrl = `https://www.craftex.com/catalogsearch/result/?q=${encodeURIComponent(cleanCode)}`;
+                        // URL corregida con el formato oficial de Craftex
+                        const craftexSearchUrl = `https://www.craftex.com/search?keywords=${encodeURIComponent(cleanCode)}`;
                         window.location.href = craftexSearchUrl;
                     }, 1000);
                 }).catch(err => {
