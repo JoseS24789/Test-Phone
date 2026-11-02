@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Price Checker - Split View</title>
-    <!-- Librería html5-qrcode -->
+    <title>Price Checker</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         body { 
@@ -12,91 +11,74 @@
             text-align: center; 
             background: #f4f7f6; 
             margin: 0; 
-            padding: 10px; 
+            padding: 20px; 
             color: #333;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            box-sizing: border-box;
         }
-        .scanner-title { font-size: 1rem; font-weight: 600; color: #2c3e50; margin-bottom: 4px; }
-        
-        #scanner-container {
-            flex: 0 0 auto;
-            padding-bottom: 5px;
-        }
+        .scanner-title { font-size: 1.1rem; font-weight: 600; color: #2c3e50; margin-bottom: 8px; }
         #reader { 
-            width: 100%; max-width: 260px; margin: 0 auto; background: #fff;
-            border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            width: 100%; max-width: 280px; margin: 0 auto; background: #fff;
+            border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            min-height: 200px;
         }
         #status-box { 
-            margin-top: 5px; font-size: 0.85rem; color: #27ae60; font-weight: bold;
-        }
-
-        #result-panel {
-            flex: 1;
-            margin-top: 8px;
-            width: 100%;
-            max-width: 400px;
-            margin-left: auto;
-            margin-right: auto;
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.08);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 15px;
-            box-sizing: border-box;
-            border: 1px solid #e1e8ed;
-        }
-        .placeholder-text {
-            color: #888;
-            font-size: 0.9rem;
-        }
-        .product-card {
-            width: 100%;
-            text-align: center;
-        }
-        .code-display {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #2c3e50;
-            margin-bottom: 10px;
-        }
-        .craftex-btn {
-            display: inline-block;
-            background-color: #27ae60;
-            color: white;
-            padding: 10px 20px;
-            font-size: 0.95rem;
-            font-weight: bold;
-            text-decoration: none;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(39, 174, 96, 0.2);
-            transition: background 0.2s;
-        }
-        .craftex-btn:hover {
-            background-color: #219653;
+            margin-top: 25px; padding: 15px 20px; background: #ffffff; 
+            border-radius: 10px; display: inline-block; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            max-width: 400px; width: 90%; font-size: 0.95rem; color: #27ae60; font-weight: bold;
         }
     </style>
 </head>
 <body>
 
-    <div id="scanner-container">
-        <div class="scanner-title">Price Checker</div>
-        <div id="reader"></div>
-        <div id="status-box">Apunta la cámara a un código...</div>
-    </div>
+    <div class="scanner-title">Price Checker</div>
+    <div id="reader"></div>
+    <div id="status-box">Point the rear camera at a barcode...</div>
 
-    <div id="result-panel">
-        <div class="placeholder-text" id="panel-content">
-            Escanea un código de barras para ver el acceso directo al producto aquí.
-        </div>
-    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const statusBox = document.getElementById('status-box');
 
-    <!-- Enlazar tu archivo JavaScript externo -->
-    <script src="scanner.js" defer></script>
+            function onScanSuccess(decodedText, decodedResult) {
+                if (navigator.vibrate) navigator.vibrate(100);
+
+                // Limpiar espacios y opcionalmente quitar ceros a la izquierda si el sitio de Craftex lo requiere
+                let cleanCode = decodedText.trim();
+                
+                // Si notas que Craftex no lo encuentra por los ceros iniciales, puedes descomentar la línea de abajo:
+                // cleanCode = cleanCode.replace(/^0+/, '');
+
+                statusBox.innerHTML = `Scanned: <b>${cleanCode}</b><br><span style="font-size:0.8rem; color:#555;">Searching on Craftex...</span>`;
+
+                console.info("Código limpio enviado a Craftex:", cleanCode);
+
+                html5QrCode.stop().then(() => {
+                    setTimeout(() => {
+                        // URL oficial de búsqueda de Craftex
+                        const craftexSearchUrl = `https://www.craftex.com/catalogsearch/result/?q=${encodeURIComponent(cleanCode)}`;
+                        window.location.href = craftexSearchUrl;
+                    }, 1000);
+                }).catch(err => {
+                    console.error("Error al detener el escáner:", err);
+                });
+            }
+
+            function onScanFailure(error) {
+                // Continuar escaneando
+            }
+
+            const html5QrCode = new Html5Qrcode("reader");
+            const config = { fps: 10, qrbox: { width: 200, height: 100 } };
+
+            html5QrCode.start(
+                { facingMode: "environment" }, 
+                config, 
+                onScanSuccess, 
+                onScanFailure
+            ).catch((err) => {
+                console.error("Error de cámara:", err);
+                statusBox.style.color = "#e74c3c";
+                statusBox.innerText = "Error: Could not access camera.";
+            });
+        });
+    </script>
 </body>
 </html>
