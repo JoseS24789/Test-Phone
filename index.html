@@ -1,29 +1,109 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Price Checker</title>
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Price Checker - Craftex</title>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            text-align: center; 
-            background: #f4f7f6; 
-            margin: 0; 
-            padding: 20px; 
-            color: #333;
+        :root {
+            --bg: #f4f7f6;
+            --card: #ffffff;
+            --text: #2c3e50;
+            --muted: #64748b;
+            --success: #16a34a;
+            --error: #dc2626;
+            --accent: #0f172a;
         }
-        .scanner-title { font-size: 1.1rem; font-weight: 600; color: #2c3e50; margin-bottom: 8px; }
-        #reader { 
-            width: 100%; max-width: 280px; margin: 0 auto; background: #fff;
-            border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            min-height: 200px;
+
+        * {
+            box-sizing: border-box;
         }
-        #status-box { 
-            margin-top: 25px; padding: 15px 20px; background: #ffffff; 
-            border-radius: 10px; display: inline-block; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            max-width: 400px; width: 90%; font-size: 0.95rem; color: #27ae60; font-weight: bold;
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            text-align: center;
+            background: var(--bg);
+            margin: 0;
+            padding: 24px 16px;
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .scanner-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 14px;
+            letter-spacing: -0.01em;
+        }
+
+        #reader {
+            width: 100%;
+            max-width: 340px;
+            background: var(--card);
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+            min-height: 240px;
+        }
+
+        /* Oculta la barra de enlaces extra que a veces inyecta html5-qrcode */
+        #reader img[alt="Info icon"] {
+            display: none;
+        }
+
+        #status-box {
+            margin-top: 20px;
+            padding: 16px 20px;
+            background: var(--card);
+            border-radius: 12px;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+            max-width: 400px;
+            width: 100%;
+            font-size: 0.95rem;
+            line-height: 1.45;
+        }
+
+        .status-idle { color: var(--muted); font-weight: 500; }
+        .status-success { color: var(--success); font-weight: 600; }
+        .status-error { color: var(--error); font-weight: 600; }
+
+        .code-badge {
+            display: inline-block;
+            margin: 6px 0;
+            padding: 4px 10px;
+            background: #f1f5f9;
+            border-radius: 6px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 1rem;
+            color: var(--accent);
+        }
+
+        .subtext {
+            display: block;
+            font-size: 0.82rem;
+            color: var(--muted);
+            font-weight: 400;
+            margin-top: 4px;
+        }
+
+        .btn-retry {
+            margin-top: 12px;
+            padding: 9px 16px;
+            border: none;
+            border-radius: 8px;
+            background: var(--accent);
+            color: #fff;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-retry:hover {
+            opacity: 0.92;
         }
     </style>
 </head>
@@ -31,49 +111,136 @@
 
     <div class="scanner-title">Price Checker</div>
     <div id="reader"></div>
-    <div id="status-box">Point the rear camera at a barcode...</div>
+    <div id="status-box" class="status-idle">Apunta la cámara trasera al código de barras...</div>
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            const statusBox = document.getElementById('status-box');
-
-            function onScanSuccess(decodedText, decodedResult) {
-                if (navigator.vibrate) navigator.vibrate(100);
-
-                let cleanCode = decodedText.trim();
-                
-                statusBox.innerHTML = `Scanned: <b>${cleanCode}</b><br><span style="font-size:0.8rem; color:#555;">Searching on Craftex...</span>`;
-
-                console.info("Código escaneado enviado a Craftex:", cleanCode);
-
-                html5QrCode.stop().then(() => {
-                    setTimeout(() => {
-                        // URL corregida con el formato oficial de Craftex
-                        const craftexSearchUrl = `https://www.craftex.com/search?keywords=${encodeURIComponent(cleanCode)}`;
-                        window.location.href = craftexSearchUrl;
-                    }, 1000);
-                }).catch(err => {
-                    console.error("Error al detener el escáner:", err);
-                });
-            }
-
-            function onScanFailure(error) {
-                // Continuar escaneando
-            }
-
+            const statusBox = document.getElementById("status-box");
             const html5QrCode = new Html5Qrcode("reader");
-            const config = { fps: 10, qrbox: { width: 200, height: 100 } };
 
-            html5QrCode.start(
-                { facingMode: "environment" }, 
-                config, 
-                onScanSuccess, 
-                onScanFailure
-            ).catch((err) => {
-                console.error("Error de cámara:", err);
-                statusBox.style.color = "#e74c3c";
-                statusBox.innerText = "Error: Could not access camera.";
+            let isProcessing = false;
+            let redirectTimer = null;
+
+            // Formatos comunes de productos y códigos de barras
+            const config = {
+                fps: 15,
+                qrbox: { width: 250, height: 120 },
+                aspectRatio: 1.333333,
+                formatsToSupport: [
+                    Html5QrcodeSupportedFormats.UPC_A,
+                    Html5QrcodeSupportedFormats.UPC_E,
+                    Html5QrcodeSupportedFormats.EAN_13,
+                    Html5QrcodeSupportedFormats.EAN_8,
+                    Html5QrcodeSupportedFormats.CODE_128,
+                    Html5QrcodeSupportedFormats.CODE_39,
+                    Html5QrcodeSupportedFormats.ITF,
+                    Html5QrcodeSupportedFormats.QR_CODE
+                ]
+            };
+
+            function setStatus(type, htmlContent) {
+                statusBox.className = `status-${type}`;
+                statusBox.innerHTML = htmlContent;
+            }
+
+            function renderRetryButton(label = "Reintentar") {
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "btn-retry";
+                btn.textContent = label;
+                btn.addEventListener("click", () => {
+                    clearTimeout(redirectTimer);
+                    isProcessing = false;
+                    startScanner();
+                });
+                statusBox.appendChild(btn);
+            }
+
+            async function onScanSuccess(decodedText) {
+                if (isProcessing) return;
+                isProcessing = true;
+
+                const cleanCode = decodedText.trim();
+                if (!cleanCode) {
+                    isProcessing = false;
+                    return;
+                }
+
+                if (navigator.vibrate) {
+                    navigator.vibrate(100);
+                }
+
+                const craftexSearchUrl = `https://www.craftex.com/search?keywords=${encodeURIComponent(cleanCode)}`;
+
+                setStatus(
+                    "success",
+                    `Código detectado:<br><span class="code-badge">${escapeHtml(cleanCode)}</span><span class="subtext">Redirigiendo a Craftex...</span>`
+                );
+
+                try {
+                    if (html5QrCode.isScanning) {
+                        await html5QrCode.stop();
+                    }
+                } catch (err) {
+                    console.warn("No se pudo detener la cámara antes de redirigir:", err);
+                }
+
+                redirectTimer = setTimeout(() => {
+                    window.location.assign(craftexSearchUrl);
+                }, 700);
+            }
+
+            function onScanFailure() {
+                // Normal mientras no haya un código enfocado dentro del cuadro
+            }
+
+            async function startScanner() {
+                setStatus("idle", "Iniciando cámara...");
+
+                if (!window.isSecureContext) {
+                    setStatus(
+                        "error",
+                        "La cámara requiere HTTPS o localhost.<span class=\"subtext\">Abre esta página desde una conexión segura (HTTPS).</span>"
+                    );
+                    renderRetryButton("Intentar de nuevo");
+                    return;
+                }
+
+                try {
+                    await html5QrCode.start(
+                        { facingMode: "environment" },
+                        config,
+                        onScanSuccess,
+                        onScanFailure
+                    );
+                    setStatus("idle", "Apunta la cámara trasera al código de barras...");
+                } catch (err) {
+                    console.error("Error de cámara:", err);
+                    setStatus(
+                        "error",
+                        "No se pudo acceder a la cámara.<span class=\"subtext\">Verifica los permisos del navegador o que ninguna otra app la esté usando.</span>"
+                    );
+                    renderRetryButton("Reintentar cámara");
+                }
+            }
+
+            function escapeHtml(str) {
+                return str
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+
+            window.addEventListener("beforeunload", () => {
+                clearTimeout(redirectTimer);
+                if (html5QrCode.isScanning) {
+                    html5QrCode.stop().catch(() => {});
+                }
             });
+
+            startScanner();
         });
     </script>
 </body>
