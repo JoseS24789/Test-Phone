@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Price Checker - Craftex</title>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="./craftex-connector.js" defer></script>
     <style>
         :root {
             --bg: #f4f7f6;
@@ -14,6 +15,7 @@
             --success: #16a34a;
             --error: #dc2626;
             --accent: #0f172a;
+            --link: #2563eb;
         }
 
         * {
@@ -50,7 +52,6 @@
             min-height: 240px;
         }
 
-        /* Oculta la barra de enlaces extra que a veces inyecta html5-qrcode */
         #reader img[alt="Info icon"] {
             display: none;
         }
@@ -90,8 +91,29 @@
             margin-top: 4px;
         }
 
-        .btn-retry {
+        .manual-link {
+            display: inline-block;
+            margin-top: 10px;
+            color: var(--link);
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-decoration: underline;
+            word-break: break-all;
+        }
+
+        .manual-link:hover {
+            opacity: 0.85;
+        }
+
+        .actions {
             margin-top: 12px;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-action {
             padding: 9px 16px;
             border: none;
             border-radius: 8px;
@@ -102,7 +124,7 @@
             cursor: pointer;
         }
 
-        .btn-retry:hover {
+        .btn-action:hover {
             opacity: 0.92;
         }
     </style>
@@ -117,11 +139,10 @@
         document.addEventListener("DOMContentLoaded", function () {
             const statusBox = document.getElementById("status-box");
             const html5QrCode = new Html5Qrcode("reader");
+            const connector = window.CraftexConnector;
 
             let isProcessing = false;
-            let redirectTimer = null;
 
-            // Formatos comunes de productos y códigos de barras
             const config = {
                 fps: 15,
                 qrbox: { width: 250, height: 120 },
@@ -143,24 +164,27 @@
                 statusBox.innerHTML = htmlContent;
             }
 
-            function renderRetryButton(label = "Reintentar") {
+            function addActionButton(label, onClick) {
+                let container = statusBox.querySelector(".actions");
+                if (!container) {
+                    container = document.createElement("div");
+                    container.className = "actions";
+                    statusBox.appendChild(container);
+                }
+
                 const btn = document.createElement("button");
                 btn.type = "button";
-                btn.className = "btn-retry";
+                btn.className = "btn-action";
                 btn.textContent = label;
-                btn.addEventListener("click", () => {
-                    clearTimeout(redirectTimer);
-                    isProcessing = false;
-                    startScanner();
-                });
-                statusBox.appendChild(btn);
+                btn.addEventListener("click", onClick);
+                container.appendChild(btn);
             }
 
             async function onScanSuccess(decodedText) {
                 if (isProcessing) return;
                 isProcessing = true;
 
-                const cleanCode = decodedText.trim();
+                const cleanCode = connector ? connector.normalizeCode(decodedText) : decodedText.trim();
                 if (!cleanCode) {
                     isProcessing = false;
                     return;
@@ -170,24 +194,51 @@
                     navigator.vibrate(100);
                 }
 
-                const craftexSearchUrl = `https://www.craftex.com/search?keywords=${encodeURIComponent(cleanCode)}`;
-
-                setStatus(
-                    "success",
-                    `Código detectado:<br><span class="code-badge">${escapeHtml(cleanCode)}</span><span class="subtext">Redirigiendo a Craftex...</span>`
-                );
-
                 try {
                     if (html5QrCode.isScanning) {
                         await html5QrCode.stop();
                     }
                 } catch (err) {
-                    console.warn("No se pudo detener la cámara antes de redirigir:", err);
+                    console.warn("No se pudo detener la cámara:", err);
                 }
 
-                redirectTimer = setTimeout(() => {
-                    window.location.assign(craftexSearchUrl);
-                }, 700);
+                const result = connector
+                    ? connector.openSearchTab(cleanCode)
+                    : { opened: false, url: `https://www.craftex.com/search?keywords=${encodeURIComponent(cleanCode)}` };
+
+                const helperMsg = result.opened
+                    ? "Búsqueda abierta en una nueva pestaña."
+                    : "El navegador bloqueó la pestaña automática. Usa el enlace de abajo:";
+
+                setStatus(
+                    "success",
+                    `Código detectado:<br>
+                    <span class="code-badge">${escapeHtml(cleanCode)}</span>
+                    <span class="subtext">${helperMsg}</span>`
+                );
+
+                const manualLink = connector
+                    ? connector.createManualLinkElement(cleanCode)
+                    : createFallbackLink(result.url);
+
+                if (manualLink) {
+                    statusBox.appendChild(manualLink);
+                }
+
+                addActionButton("Escanear otro código", () => {
+                    isProcessing = false;
+                    startScanner();
+                });
+            }
+
+            function createFallbackLink(url) {
+                const a = document.createElement("a");
+                a.href = url;
+                a.target = "_blank";
+                a.rel = "noopener noreferrer";
+                a.className = "manual-link";
+                a.textContent = "Abrir búsqueda en Craftex";
+                return a;
             }
 
             function onScanFailure() {
@@ -202,7 +253,10 @@
                         "error",
                         "La cámara requiere HTTPS o localhost.<span class=\"subtext\">Abre esta página desde una conexión segura (HTTPS).</span>"
                     );
-                    renderRetryButton("Intentar de nuevo");
+                    addActionButton("Intentar de nuevo", () => {
+                        isProcessing = false;
+                        startScanner();
+                    });
                     return;
                 }
 
@@ -220,7 +274,10 @@
                         "error",
                         "No se pudo acceder a la cámara.<span class=\"subtext\">Verifica los permisos del navegador o que ninguna otra app la esté usando.</span>"
                     );
-                    renderRetryButton("Reintentar cámara");
+                    addActionButton("Reintentar cámara", () => {
+                        isProcessing = false;
+                        startScanner();
+                    });
                 }
             }
 
@@ -234,7 +291,6 @@
             }
 
             window.addEventListener("beforeunload", () => {
-                clearTimeout(redirectTimer);
                 if (html5QrCode.isScanning) {
                     html5QrCode.stop().catch(() => {});
                 }
