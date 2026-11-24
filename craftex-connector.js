@@ -1,5 +1,3 @@
-// craftex-connector.js
-
 function onScanSuccess(decodedText, decodedResult) {
     if (navigator.vibrate) {
         navigator.vibrate(100);
