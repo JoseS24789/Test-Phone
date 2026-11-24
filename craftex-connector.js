@@ -1,49 +1,42 @@
-(function (global) {
-    "use strict";
+// craftex-connector.js
 
-    const CRAFTEX_SEARCH_BASE_URL = "https://www.craftex.com/search";
-
-    function normalizeCode(rawCode) {
-        return typeof rawCode === "string" ? rawCode.trim() : "";
+function onScanSuccess(decodedText, decodedResult) {
+    // Reproducir vibración de éxito si está disponible
+    if (navigator.vibrate) {
+        navigator.vibrate(100);
     }
 
-    function buildSearchUrl(code) {
-        const cleanCode = normalizeCode(code);
-        if (!cleanCode) return "";
+    // Actualizar estado en pantalla
+    const statusBox = document.getElementById('status-box');
+    statusBox.innerText = `Found: ${decodedText}. Opening Craftex...`;
 
-        const url = new URL(CRAFTEX_SEARCH_BASE_URL);
-        url.searchParams.set("keywords", cleanCode);
-        return url.toString();
-    }
+    console.log(`Scanned barcode: ${decodedText}`, decodedResult);
 
-    function openSearchTab(code) {
-        const searchUrl = buildSearchUrl(code);
-        if (!searchUrl) return { opened: false, url: "" };
+    // Opcional: Detener el escáner al encontrar el código
+    html5QrCode.stop().then(() => {
+        // Redirigir a la búsqueda oficial de Craftex usando el código escaneado
+        const craftexSearchUrl = `https://www.craftex.com/catalogsearch/result/?q=${encodeURIComponent(decodedText)}`;
+        window.location.href = craftexSearchUrl;
+    }).catch(err => {
+        console.error("Failed to stop scanner.", err);
+    });
+}
 
-        const newWindow = window.open(searchUrl, "_blank", "noopener,noreferrer");
-        return {
-            opened: Boolean(newWindow),
-            url: searchUrl
-        };
-    }
+function onScanFailure(error) {
+    // Ignorar errores de escaneo continuo mientras busca enfocar
+}
 
-    function createManualLinkElement(code, label = "Abrir búsqueda en Craftex", className = "manual-link") {
-        const searchUrl = buildSearchUrl(code);
-        if (!searchUrl) return null;
+// Inicializar el escáner al cargar la página
+const html5QrCode = new Html5Qrcode("reader");
+const config = { fps: 10, qrbox: { width: 200, height: 100 } };
 
-        const link = document.createElement("a");
-        link.href = searchUrl;
-        link.target = "_blank";
-        link.rel = "noopener noreferrer";
-        link.className = className;
-        link.textContent = label;
-        return link;
-    }
-
-    global.CraftexConnector = {
-        normalizeCode,
-        buildSearchUrl,
-        openSearchTab,
-        createManualLinkElement
-    };
-})(window);
+// Forzar el uso exclusivo de la cámara trasera ('environment')
+html5QrCode.start(
+    { facingMode: "environment" }, 
+    config, 
+    onScanSuccess, 
+    onScanFailure
+).catch((err) => {
+    console.error("Error starting the rear camera: ", err);
+    document.getElementById('status-box').innerText = "Error: Could not access the rear camera.";
+});
