@@ -10,7 +10,6 @@ function onScanSuccess(decodedText, decodedResult) {
     console.log(`Scanned barcode: ${decodedText}`, decodedResult);
 
     html5QrCode.stop().then(() => {
-        // Redirigir a la búsqueda oficial de Craftex usando el código escaneado
         const craftexSearchUrl = `https://www.craftex.com/catalogsearch/result/?q=${encodeURIComponent(decodedText)}`;
         window.location.href = craftexSearchUrl;
     }).catch(err => {
