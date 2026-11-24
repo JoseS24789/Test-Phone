@@ -28,7 +28,6 @@
     </style>
 </head>
 <body>
-
     <div class="scanner-title">Price Checker</div>
     <div id="reader"></div>
     <div id="status-box">Point the rear camera at a barcode...</div>
@@ -44,23 +43,19 @@
                 
                 statusBox.innerHTML = `Scanned: <b>${cleanCode}</b><br><span style="font-size:0.8rem; color:#555;">Searching on Craftex...</span>`;
 
-                console.info("Código escaneado enviado a Craftex:", cleanCode);
+                console.info("Code scanned and sent to Craftex.com:", cleanCode);
 
                 html5QrCode.stop().then(() => {
                     setTimeout(() => {
-                        // URL corregida con el formato oficial de Craftex
                         const craftexSearchUrl = `https://www.craftex.com/search?keywords=${encodeURIComponent(cleanCode)}`;
                         window.location.href = craftexSearchUrl;
                     }, 1000);
                 }).catch(err => {
-                    console.error("Error al detener el escáner:", err);
+                    console.error("Error, try again:", err);
                 });
             }
-
             function onScanFailure(error) {
-                // Continuar escaneando
             }
-
             const html5QrCode = new Html5Qrcode("reader");
             const config = { fps: 10, qrbox: { width: 200, height: 100 } };
 
@@ -70,7 +65,7 @@
                 onScanSuccess, 
                 onScanFailure
             ).catch((err) => {
-                console.error("Error de cámara:", err);
+                console.error("Camara Error:", err);
                 statusBox.style.color = "#e74c3c";
                 statusBox.innerText = "Error: Could not access camera.";
             });
